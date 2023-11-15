@@ -1,0 +1,27 @@
+syntax = "proto3";
+package Auction;
+
+option go_package = "grpc/proto";
+
+message BidMessage {
+    int32 id = 1;
+    int32 amount = 2;
+}
+
+message Acknowledgement {
+    string status = 1;
+}
+
+message Outcome {
+    int32 highestBid = 1;
+    string winner = 2;
+}
+
+message Empty {}
+
+service Auction {
+    //given a bid, returns an outcome among {fail, success or exception}
+    rpc Bid(BidMessage) returns (Acknowledgement);
+    //if the auction is over, it returns the result, else highest bid.
+    rpc GetResult(Empty) returns (Outcome);
+}
