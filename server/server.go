@@ -57,12 +57,14 @@ func startServer(replicationManager *ReplicationManager) {
 	}
 }
 
-
-//func (UnimplementedAuctionServer) Bid(context.Context, *BidMessage) (*Acknowledgement, error)
 func (replicationManager *ReplicationManager) Bid(ctx context.Context, bidMessage *proto.BidMessage) (*proto.Acknowledgement, error) {
 	//If map is empty, start the bidding phase
 	if len(replicationManager.biddingMap) == 0 {
 		go replicationManager.startBidding()
+	}
+
+	if replicationManager.isBiddingOver{
+		return &proto.Acknowledgement{Status: "fail - bidding is over"}, nil
 	}
 	
 	//We asssume that the bid is higher than the last bid, and can overwrite the last bid in the map.
