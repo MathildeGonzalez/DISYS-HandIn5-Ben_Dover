@@ -70,7 +70,7 @@ func (client *Client)sendBid(bidAmount int32){
 
 //Function to request result of auction
 func (client *Client)getResult(){
-	
+	//ask the first replication manager for the result, since it is the first to be updated
 }
 
 
