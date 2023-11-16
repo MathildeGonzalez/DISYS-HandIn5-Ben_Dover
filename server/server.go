@@ -16,8 +16,8 @@ import (
 
 type ReplicationManager struct {
 	proto.UnimplementedAuctionServer
-	biddingMap map[int32]int32
-	port int32
+	biddingMap    map[int32]int32
+	port          int32
 	isBiddingOver bool
 }
 
@@ -28,7 +28,7 @@ func main() {
 
 	// Create a server struct with the port and the above slice of connections
 	replicationManager := &ReplicationManager{
-		port: ownPort,
+		port:       ownPort,
 		biddingMap: make(map[int32]int32),
 	}
 
@@ -63,10 +63,10 @@ func (replicationManager *ReplicationManager) Bid(ctx context.Context, bidMessag
 		go replicationManager.startBidding()
 	}
 
-	if replicationManager.isBiddingOver{
+	if replicationManager.isBiddingOver {
 		return &proto.Acknowledgement{Status: "fail - bidding is over"}, nil
 	}
-	
+
 	//We asssume that the bid is higher than the last bid, and can overwrite the last bid in the map.
 	_, currentHighestBid := replicationManager.getHighestBid()
 	//Check if the bid was higher then the current highest bid
@@ -74,17 +74,17 @@ func (replicationManager *ReplicationManager) Bid(ctx context.Context, bidMessag
 		//Return error
 		return &proto.Acknowledgement{Status: "fail"}, nil
 	}
-	
+
 	//Add the new Bid to the map for the Client.
 	replicationManager.biddingMap[bidMessage.Id] = bidMessage.Amount
-	
+
 	//Return succesful
-	return &proto.Acknowledgement{Status: "success"}, nil 
+	return &proto.Acknowledgement{Status: "success"}, nil
 }
 
 func (replicationManager *ReplicationManager) GetResult(ctx context.Context, empty *proto.Empty) (*proto.Outcome, error) {
 	currentHighestBidder, currentHighestBid := replicationManager.getHighestBid()
-	if replicationManager.isBiddingOver{
+	if replicationManager.isBiddingOver {
 		winnerString := "Client " + strconv.Itoa(int(currentHighestBidder))
 		return &proto.Outcome{Winner: winnerString, HighestBid: currentHighestBid}, nil
 	}
@@ -96,7 +96,7 @@ func (replicationManager *ReplicationManager) getHighestBid() (int32, int32) {
 	currentHighestBid := int32(0)
 
 	//Run through the hashmap, to find highest bidder
-	for key, value := range replicationManager.biddingMap{
+	for key, value := range replicationManager.biddingMap {
 		if value > currentHighestBid {
 			currentHighestBid = value
 			currentHighestBidder = key
@@ -107,8 +107,6 @@ func (replicationManager *ReplicationManager) getHighestBid() (int32, int32) {
 
 func (replicationManager *ReplicationManager) startBidding() {
 	//Here the time you can bid is 60 seconds.
-	time.Sleep(60*time.Second)
-	replicationManager.isBiddingOver=true
+	time.Sleep(60 * time.Second)
+	replicationManager.isBiddingOver = true
 }
-
-
