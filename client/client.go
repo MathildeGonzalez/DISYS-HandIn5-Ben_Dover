@@ -19,7 +19,7 @@ import (
 //When the frontend registers that a replication manager has failed, it removes it from the slice
 
 type Client struct {
-	id                  int32
+	id                  string
 	replicationManagers []int32
 	auctionClients      []proto.AuctionClient
 }
@@ -27,13 +27,13 @@ type Client struct {
 //make frontent struct
 
 func main() {
-	clientId, _ := strconv.ParseInt(os.Args[1], 10, 32)
+	clientId := os.Args[1]
 
 	//Create a client struct
 	//add all replication managers to the slice
 
 	client := &Client{
-		id:                  int32(clientId),
+		id:                  string(clientId),
 		replicationManagers: []int32{5000, 5001, 5002},
 		auctionClients:      []proto.AuctionClient{},
 	}

@@ -4,7 +4,7 @@ package Auction;
 option go_package = "grpc/proto";
 
 message BidMessage {
-    int32 id = 1;
+    string id = 1;
     int32 amount = 2;
 }
 
