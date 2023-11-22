@@ -60,13 +60,22 @@ func main() {
 }
 
 // Function to send bid to all replication managers by looping through auctionClients
+// We assume that there always be a minimum of one functioning server.
 func (client *Client) sendBid(bidAmount int32) {
+	//The function can maximally remove one server each call of sendBid()
+	var toDelete proto.AuctionClient
+
 	for _, auctionClient := range client.auctionClients {
 		ack, err := auctionClient.Bid(context.Background(), &proto.BidMessage{Id: client.id, Amount: bidAmount})
 		if err != nil {
-			log.Fatalf("Could not send bid to server: %v", err) //remove the Server from slice.
+			log.Printf("Could not send bid to server: Connection lost!") //remove the Server from slice.
+			toDelete = auctionClient
+		} else {
+			log.Printf("Received response from server: %v", ack)
 		}
-		log.Printf("Received acknowledgement from server: %v", ack)
+	}
+	if toDelete != nil {
+		client.auctionClients = removeElement(client.auctionClients, toDelete)
 	}
 }
 
@@ -99,7 +108,7 @@ func (client *Client) connectToServers() {
 }
 
 // Helper method used to remove a specific element from a Slice
-func removeElement(slice []*proto.AuctionClient, element *proto.AuctionClient) []*proto.AuctionClient {
+func removeElement(slice []proto.AuctionClient, element proto.AuctionClient) []proto.AuctionClient {
 	for i, v := range slice {
 		if v == element {
 			return append(slice[:i], slice[i+1:]...)
