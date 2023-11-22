@@ -16,7 +16,7 @@ import (
 
 type ReplicationManager struct {
 	proto.UnimplementedAuctionServer
-	biddingMap    map[int32]int32
+	biddingMap    map[string]int32
 	port          int32
 	isBiddingOver bool
 }
@@ -29,7 +29,7 @@ func main() {
 	// Create a server struct with the port and the above slice of connections
 	replicationManager := &ReplicationManager{
 		port:       ownPort,
-		biddingMap: make(map[int32]int32),
+		biddingMap: make(map[string]int32),
 	}
 
 	// Start the server
@@ -72,7 +72,7 @@ func (replicationManager *ReplicationManager) Bid(ctx context.Context, bidMessag
 	//Check if the bid was higher then the current highest bid
 	if bidMessage.Amount < currentHighestBid {
 		//Return error
-		return &proto.Acknowledgement{Status: "fail"}, nil
+		return &proto.Acknowledgement{Status: "fail - bid too low"}, nil
 	}
 
 	//Add the new Bid to the map for the Client.
@@ -85,14 +85,14 @@ func (replicationManager *ReplicationManager) Bid(ctx context.Context, bidMessag
 func (replicationManager *ReplicationManager) GetResult(ctx context.Context, empty *proto.Empty) (*proto.Outcome, error) {
 	currentHighestBidder, currentHighestBid := replicationManager.getHighestBid()
 	if replicationManager.isBiddingOver {
-		winnerString := "Client " + strconv.Itoa(int(currentHighestBidder))
+		winnerString := currentHighestBidder
 		return &proto.Outcome{Winner: winnerString, HighestBid: currentHighestBid}, nil
 	}
 	return &proto.Outcome{Winner: "", HighestBid: currentHighestBid}, nil
 }
 
-func (replicationManager *ReplicationManager) getHighestBid() (int32, int32) {
-	currentHighestBidder := int32(0)
+func (replicationManager *ReplicationManager) getHighestBid() (string, int32) {
+	var currentHighestBidder string
 	currentHighestBid := int32(0)
 
 	//Run through the hashmap, to find highest bidder
