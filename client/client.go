@@ -19,11 +19,11 @@ import (
 //When the frontend registers that a replication manager has failed, it removes it from the slice
 
 type Client struct {
-	id                  string
+	id string
 }
 
 type Frontend struct {
-	id 					string
+	id                  string
 	replicationManagers []int32
 	auctionClients      []proto.AuctionClient
 }
@@ -37,18 +37,18 @@ func main() {
 	//add all replication managers to the slice
 
 	client := &Client{
-		id:                  string(clientId),
+		id: string(clientId),
 	}
 
 	frontend := &Frontend{
-		id:				     string(clientId),
+		id:                  string(clientId),
 		replicationManagers: []int32{5000, 5001, 5002},
 		auctionClients:      []proto.AuctionClient{},
 	}
 
 	//Connect to all replication managers
 	frontend.connectToServers()
-	
+
 	go listenToClient(client, frontend)
 
 	for {
@@ -56,7 +56,7 @@ func main() {
 	}
 }
 
-func listenToClient(client *Client, frontend *Frontend){
+func listenToClient(client *Client, frontend *Frontend) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		scan := scanner.Text()
@@ -76,8 +76,7 @@ func listenToClient(client *Client, frontend *Frontend){
 	}
 }
 
-
-func (client *Client) sendBid(bidAmount int32, frontend *Frontend){
+func (client *Client) sendBid(bidAmount int32, frontend *Frontend) {
 	frontendResponse := frontend.sendBid(bidAmount)
 	log.Printf("Client received response from frontend: %s", frontendResponse)
 }
@@ -87,7 +86,7 @@ func (client *Client) sendBid(bidAmount int32, frontend *Frontend){
 func (frontend *Frontend) sendBid(bidAmount int32) string {
 	//The function can maximally remove one server each call of sendBid()
 	var toDelete proto.AuctionClient
-	var serverResponse string 
+	var serverResponse string
 	for _, auctionClient := range frontend.auctionClients {
 		ack, err := auctionClient.Bid(context.Background(), &proto.BidMessage{Id: frontend.id, Amount: bidAmount})
 		if err != nil {
@@ -101,23 +100,25 @@ func (frontend *Frontend) sendBid(bidAmount int32) string {
 	if toDelete != nil {
 		frontend.auctionClients = removeElement(frontend.auctionClients, toDelete)
 	}
-	
+
 	return serverResponse
 }
 
-func (client *Client) getResult(frontend *Frontend){
+func (client *Client) getResult(frontend *Frontend) {
 	frontendResponse := frontend.getResult()
 	log.Printf("Client received from frontend: %s", frontendResponse)
 }
 
 // Function to request result of auction
-func (frontend *Frontend) getResult() string{
+func (frontend *Frontend) getResult() string {
 	//ask the first replication manager for the result, since it is the first to be updated
 	var serverResponse string
 	outcome, err := frontend.auctionClients[0].GetResult(context.Background(), &proto.Empty{})
 	if err != nil {
 		//this error will happen, if all servers have crashed/failed
-		log.Fatalf("Could not receive result from server: %v", err)
+		log.Printf("Could not receive result from server: %v", err)
+		frontend.auctionClients = removeElement(frontend.auctionClients, frontend.auctionClients[0])
+		return frontend.getResult()
 	}
 	if len(outcome.Winner) == 0 {
 		serverResponse = fmt.Sprintf("The current highest bid is %d", outcome.HighestBid)
