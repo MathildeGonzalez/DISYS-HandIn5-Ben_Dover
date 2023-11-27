@@ -50,31 +50,37 @@ go run . Casper
 
 If you want to start more clients, you can open a new console and navigate to the client-folder again, and start a new client from there (with a unique name).
 
-The frontend inside the client-file will automatically connect to the servers. 
+The frontend inside the client-file will automatically connect to the servers.
 
 ## How To use the client
 
-When the client is started, you can write commands in the console. 
+When the client is started, you can write commands in the console.
 
 The command for bidding is as follows:
+
 ```console
 bid <amount>
 ```
+
 where amount must be an integer.
 For example you can write:
+
 ```console
 bid 100
 ```
 
-The first bid from a client will officially start the auction. 
-The auction runs for 60 seconds. 
+The first bid from a client will officially start the auction.
+The auction runs for 60 seconds.
 
 To query the result of the auction, you can write
+
 ```console
 result
 ```
-which will either return the current highest bid or the winner of the auction, if the auction has ended. 
+
+which will either return the current highest bid or the winner of the auction, if the auction has ended.
 
 ## How To test the crash-handling
+
 If you want to see how the program proceeds when a server crashes, you can try to kill one of the servers by fx closing its terminal. The program will then continue to run, and the auction will also continue using the remaining servers.
-If there are multiple clients, you can also kill one of the clients, and the auction will also still continue. 
+If there are multiple clients, you can also kill one of the clients, and the auction will also still continue.

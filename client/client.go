@@ -28,18 +28,15 @@ type Frontend struct {
 	auctionClients      []proto.AuctionClient
 }
 
-//make frontent struct
-
 func main() {
 	clientId := os.Args[1]
-
-	//Create a client struct
-	//add all replication managers to the slice
 
 	client := &Client{
 		id: string(clientId),
 	}
 
+	//Create a frontend with the id of the client and the ports of the replication managers
+	//and a slice of auctionClients
 	frontend := &Frontend{
 		id:                  string(clientId),
 		replicationManagers: []int32{5000, 5001, 5002},
@@ -56,6 +53,7 @@ func main() {
 	}
 }
 
+// Function to listen to client input
 func listenToClient(client *Client, frontend *Frontend) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -66,11 +64,12 @@ func listenToClient(client *Client, frontend *Frontend) {
 				log.Println("Bid is not a number")
 				return
 			}
-			//send bid to frontend, who will then pass the bid on to all replication managers
+			//Send bid to frontend, who will then pass the bid on to all replication managers
 			client.sendBid(int32(bidAmount), frontend)
 
 		} else if scan == "result" {
-			//get result from frontend, who will then pass the request on to the first replication manager
+			//Request result from frontend, who will then pass the request on to the first replication manager
+			//and the frontend will return the response to the client
 			client.getResult(frontend)
 		}
 	}
@@ -82,7 +81,7 @@ func (client *Client) sendBid(bidAmount int32, frontend *Frontend) {
 }
 
 // Function to send bid to all replication managers by looping through auctionClients
-// We assume that there always be a minimum of one functioning server.
+// We assume that there is always a minimum of one functioning server
 func (frontend *Frontend) sendBid(bidAmount int32) string {
 	//The function can maximally remove one server each call of sendBid()
 	var toDelete proto.AuctionClient
@@ -90,17 +89,21 @@ func (frontend *Frontend) sendBid(bidAmount int32) string {
 	for _, auctionClient := range frontend.auctionClients {
 		ack, err := auctionClient.Bid(context.Background(), &proto.BidMessage{Id: frontend.id, Amount: bidAmount})
 		if err != nil {
-			log.Printf("Frontend: Could not send bid to server: Connection lost!") //remove the Server from slice.
+			log.Printf("Frontend: Could not send bid to server: Connection lost!")
+			//Mark this server for deletion
 			toDelete = auctionClient
 		} else {
 			log.Printf("Frontend received: Received response from server: %v", ack)
 			serverResponse = ack.Status
 		}
 	}
+
+	//Remove the server marked for deletion if there is one
 	if toDelete != nil {
 		frontend.auctionClients = removeElement(frontend.auctionClients, toDelete)
 	}
 
+	//Return a response to the client
 	return serverResponse
 }
 
@@ -111,15 +114,18 @@ func (client *Client) getResult(frontend *Frontend) {
 
 // Function to request result of auction
 func (frontend *Frontend) getResult() string {
-	//ask the first replication manager for the result, since it is the first to be updated
+	//Ask the first replication manager for the result
+	//Since the first RM in the slice is always the first to be updated, it will 
+	//always be the one with the most up-to-date result
 	var serverResponse string
 	outcome, err := frontend.auctionClients[0].GetResult(context.Background(), &proto.Empty{})
 	if err != nil {
-		//this error will happen, if all servers have crashed/failed
+		//This error will happen, if all servers have crashed/failed
 		log.Printf("Could not receive result from server: %v", err)
 		frontend.auctionClients = removeElement(frontend.auctionClients, frontend.auctionClients[0])
 		return frontend.getResult()
 	}
+	
 	if len(outcome.Winner) == 0 {
 		serverResponse = fmt.Sprintf("The current highest bid is %d", outcome.HighestBid)
 		log.Printf("Frontend received from server: The current highest bid is %d", outcome.HighestBid)
@@ -132,7 +138,7 @@ func (frontend *Frontend) getResult() string {
 }
 
 func (frontend *Frontend) connectToServers() {
-	// Dial the server at the specified port.
+	// Dial the servers at the specified port.
 	for _, port := range frontend.replicationManagers {
 		conn, err := grpc.Dial("localhost:"+strconv.Itoa(int(port)), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
@@ -140,6 +146,7 @@ func (frontend *Frontend) connectToServers() {
 		} else {
 			log.Printf("Connected to the server at port %d\n", port)
 		}
+		//Add the connection to the slice of auctionClients
 		frontend.auctionClients = append(frontend.auctionClients, proto.NewAuctionClient(conn))
 	}
 }
