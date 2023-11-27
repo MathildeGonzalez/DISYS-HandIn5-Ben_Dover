@@ -56,7 +56,7 @@ func main() {
 // Function to listen to client input
 func listenToClient(client *Client, frontend *Frontend) {
 	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
+	for scanner.Scan() { //For loop that doesn't stop, until program is terminated
 		scan := scanner.Text()
 		if strings.HasPrefix(scan, "bid") {
 			bidAmount, err := strconv.Atoi(strings.Split(scan, " ")[1])
