@@ -120,12 +120,17 @@ func (frontend *Frontend) getResult() string {
 	var serverResponse string
 	outcome, err := frontend.auctionClients[0].GetResult(context.Background(), &proto.Empty{})
 	if err != nil {
-		//This error will happen, if all servers have crashed/failed
+		//This error will happen, if the first RM in the slice is down
 		log.Printf("Could not receive result from server: %v", err)
+
+		//Remove the first RM from the slice
 		frontend.auctionClients = removeElement(frontend.auctionClients, frontend.auctionClients[0])
+		
+		//Call the function again, to try the next RM in the slice
 		return frontend.getResult()
 	}
-	
+
+	//If there is no winner yet, we only return the highest bid
 	if len(outcome.Winner) == 0 {
 		serverResponse = fmt.Sprintf("The current highest bid is %d", outcome.HighestBid)
 		log.Printf("Frontend received from server: The current highest bid is %d", outcome.HighestBid)
